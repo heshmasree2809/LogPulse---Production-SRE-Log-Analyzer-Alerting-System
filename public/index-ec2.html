@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LogPulse - SRE Monitoring Dashboard</title>
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Global scrollbar suppression */
+    * {
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+    }
+    *::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, Opera */
+    }
+  </style>
+</head>
+<body class="bg-black text-white font-sans antialiased selection:bg-neutral-800 selection:text-white">
+
+  <!-- 100vh Hero with Background Video -->
+  <section class="relative w-full h-screen overflow-hidden flex flex-col justify-between">
+    <!-- Background Video -->
+    <video
+      class="absolute inset-0 w-full h-full object-cover z-0"
+      autoplay
+      loop
+      muted
+      playsinline
+      src="https://cdn.sceneai.art/Hero%20Section%20Video/01d1f8de-fec0-4bf5-8b48-9fc2dbc8c6b0.mp4"
+    ></video>
+
+    <!-- Dark gradient overlay: black at 10% opacity at top to 40% at bottom -->
+    <div
+      class="absolute inset-0 z-10 pointer-events-none"
+      style="background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);"
+    ></div>
+
+    <!-- Navigation Bar -->
+    <header class="relative z-20 w-full px-6 md:px-12 py-6 flex items-center justify-between">
+      <div class="text-white font-semibold text-xl tracking-tight select-none">
+        LogPulse
+      </div>
+
+      <nav class="hidden md:flex items-center space-x-8">
+        <a href="#overview" class="text-[14px] font-normal text-white/90 hover:text-white">Overview</a>
+        <a href="#system-status" class="text-[14px] font-normal text-white/90 hover:text-white">Logs</a>
+        <a href="#analytics" class="text-[14px] font-normal text-white/90 hover:text-white">Metrics</a>
+        <a href="#incident-monitoring" class="text-[14px] font-normal text-white/90 hover:text-white">Alerts</a>
+        <a href="#architecture-support" class="text-[14px] font-normal text-white/90 hover:text-white">Support</a>
+      </nav>
+
+      <div class="hidden md:flex items-center gap-3">
+        <button
+          onclick="toggleDrillMode()"
+          id="drill-btn"
+          class="text-[12px] font-mono px-3 py-1.5 border border-neutral-600 bg-black/40 text-neutral-300 hover:border-neutral-400 cursor-pointer"
+        >
+          Step 9 Drill: Break /api/stats
+        </button>
+        <a
+          href="#system-status"
+          class="text-[14px] font-normal text-white bg-transparent border border-white px-5 py-2 hover:bg-white hover:text-black cursor-pointer"
+        >
+          View Dashboard
+        </a>
+      </div>
+
+      <!-- Mobile Hamburger Button -->
+      <button
+        id="mobile-btn"
+        onclick="toggleMobileMenu()"
+        class="md:hidden text-white p-2 border border-white/30 focus:outline-none"
+        aria-label="Toggle menu"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path id="hamburger-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </header>
+
+    <!-- Mobile Menu (show/hide toggle, no sliding) -->
+    <div id="mobile-menu" class="hidden md:hidden relative z-30 bg-black/95 border-b border-white/10 px-6 py-6 flex flex-col space-y-4">
+      <a href="#overview" onclick="toggleMobileMenu()" class="text-[14px] font-normal text-white/90 hover:text-white">Overview</a>
+      <a href="#system-status" onclick="toggleMobileMenu()" class="text-[14px] font-normal text-white/90 hover:text-white">Logs</a>
+      <a href="#analytics" onclick="toggleMobileMenu()" class="text-[14px] font-normal text-white/90 hover:text-white">Metrics</a>
+      <a href="#incident-monitoring" onclick="toggleMobileMenu()" class="text-[14px] font-normal text-white/90 hover:text-white">Alerts</a>
+      <a href="#architecture-support" onclick="toggleMobileMenu()" class="text-[14px] font-normal text-white/90 hover:text-white">Support</a>
+      <div class="pt-2 flex flex-col gap-2">
+        <button onclick="toggleDrillMode(); toggleMobileMenu();" class="w-full text-center text-[12px] font-mono border border-neutral-600 py-2 text-neutral-300">
+          Step 9 Drill: Break /api/stats
+        </button>
+        <a href="#system-status" onclick="toggleMobileMenu()" class="w-full text-center text-[14px] font-normal text-white bg-transparent border border-white py-2.5 hover:bg-white hover:text-black">
+          View Dashboard
+        </a>
+      </div>
+    </div>
+
+    <!-- Hero Content (centered, text-center) -->
+    <div id="overview" class="relative z-20 flex-1 flex flex-col items-center justify-center px-4 max-w-4xl mx-auto text-center">
+      <h1 class="text-white font-medium text-[38px] md:text-[56px] tracking-tight mb-4" style="line-height: 1.1;">
+        Monitor Every Log<br>Resolve Every Incident
+      </h1>
+      <p class="text-white/80 font-normal text-[15px] md:text-[18px] max-w-2xl mx-auto mb-8">
+        Analyze application logs, detect failures, track latency, and respond to production incidents before they impact your users.
+      </p>
+      <a
+        href="#system-status"
+        class="inline-block bg-white text-black font-medium text-[15px] px-[26px] py-[12px] shadow-sm hover:shadow-md cursor-pointer select-none"
+      >
+        View System Status
+      </a>
+    </div>
+
+    <!-- Bottom Indicator -->
+    <div class="relative z-20 pb-4 text-center">
+      <a href="#system-status" class="text-[12px] tracking-widest uppercase text-white/60 hover:text-white">
+        ↓ Live System Status & Access Log Metrics
+      </a>
+    </div>
+  </section>
+
+  <!-- System Status Section (Directly Below Hero) -->
+  <section id="system-status" class="bg-neutral-950 border-t border-neutral-900 py-12 px-6 md:px-12">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex flex-col md:flex-row md:items-center justify-between pb-6 mb-8 border-b border-neutral-800 gap-4">
+        <div>
+          <span class="text-[11px] font-mono uppercase tracking-wider text-neutral-400">
+            Log Analyzer Telemetry • GET /api/stats
+          </span>
+          <h2 class="text-2xl font-medium text-white tracking-tight mt-1">System Status</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-mono text-neutral-400">STATUS:</span>
+          <span id="health-badge" class="px-4 py-1.5 text-xs font-mono font-bold tracking-wider border border-emerald-600 bg-emerald-950 text-emerald-400">
+            HEALTHY
+          </span>
+        </div>
+      </div>
+
+      <!-- Incident Drill Alert Banner -->
+      <div id="drill-alert" class="hidden mb-8 p-4 bg-red-950/80 border border-red-700 text-red-200 font-mono text-xs space-y-2">
+        <div class="flex items-center justify-between">
+          <strong class="text-sm">INCIDENT DRILL ACTIVE: Upstream Failure Detected</strong>
+          <button onclick="toggleDrillMode()" class="underline text-neutral-300 hover:text-white cursor-pointer">Reset Drill</button>
+        </div>
+        <p id="drill-error-msg">HTTP 502 Bad Gateway: Upstream FastAPI process terminated. Nginx cannot reach 127.0.0.1:8000.</p>
+        <div class="text-neutral-400 text-[11px] pt-1 border-t border-red-900">
+          <strong>SRE Triage Steps on EC2:</strong><br>
+          1. Check Nginx error log: <code class="text-red-300">sudo tail -n 20 /var/log/nginx/error.log</code><br>
+          2. Check backend process: <code class="text-red-300">ps aux | grep uvicorn</code><br>
+          3. Test socket health: <code class="text-red-300">curl -I http://127.0.0.1:8000/health</code>
+        </div>
+      </div>
+
+      <!-- 5 Key System Status Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="p-5 bg-neutral-900/80 border border-neutral-800">
+          <div class="text-[11px] font-mono uppercase tracking-wider text-neutral-400 mb-2">5xx Error Rate</div>
+          <div id="stat-5xx" class="text-3xl font-mono font-medium text-white">0.00%</div>
+          <div class="text-[11px] font-mono text-neutral-500 mt-2">Threshold: &gt; 5.0% (SNS Alert)</div>
+        </div>
+
+        <div class="p-5 bg-neutral-900/80 border border-neutral-800">
+          <div class="text-[11px] font-mono uppercase tracking-wider text-neutral-400 mb-2">P95 Latency</div>
+          <div id="stat-p95" class="text-3xl font-mono font-medium text-white">0ms</div>
+          <div id="stat-p50" class="text-[11px] font-mono text-neutral-500 mt-2">P50: 0ms</div>
+        </div>
+
+        <div class="p-5 bg-neutral-900/80 border border-neutral-800">
+          <div class="text-[11px] font-mono uppercase tracking-wider text-neutral-400 mb-2">Total Requests</div>
+          <div id="stat-total" class="text-3xl font-mono font-medium text-white">0</div>
+          <div class="text-[11px] font-mono text-neutral-500 mt-2">Parsed from access.log</div>
+        </div>
+
+        <div class="p-5 bg-neutral-900/80 border border-neutral-800 col-span-1 sm:col-span-2 lg:col-span-2">
+          <div class="text-[11px] font-mono uppercase tracking-wider text-neutral-400 mb-2">Top Failing URL</div>
+          <div id="stat-failing-url" class="text-sm font-mono text-amber-300 break-all line-clamp-2">None detected</div>
+          <div class="text-[11px] font-mono text-neutral-500 mt-2">Calculated by analyze.py pipeline</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Log Analytics Section -->
+  <section id="analytics" class="bg-black py-16 px-6 md:px-12 border-t border-neutral-900">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-8">
+        <span class="text-[11px] font-mono uppercase tracking-wider text-neutral-400">Real-time Ingestion Metrics</span>
+        <h2 class="text-2xl font-medium text-white tracking-tight mt-1">Live Log Analytics</h2>
+        <p class="text-sm text-neutral-400 mt-1">Parsed from <code class="text-neutral-300">/var/log/nginx/access.log</code></p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="p-6 bg-neutral-950 border border-neutral-800">
+          <div class="flex items-center justify-between text-xs font-mono text-neutral-400 mb-3">
+            <span>TOTAL REQUESTS</span>
+            <span class="text-neutral-500">access.log lines</span>
+          </div>
+          <div id="card-total" class="text-3xl font-mono text-white font-medium">0</div>
+          <div class="text-xs font-mono text-neutral-500 mt-3 pt-3 border-t border-neutral-900">
+            Counted via <code class="text-neutral-400">awk '{count++}'</code>
+          </div>
+        </div>
+
+        <div class="p-6 bg-neutral-950 border border-neutral-800">
+          <div class="flex items-center justify-between text-xs font-mono text-neutral-400 mb-3">
+            <span>2XX SUCCESSFUL</span>
+            <span class="text-emerald-400 font-bold">OK</span>
+          </div>
+          <div id="card-2xx" class="text-3xl font-mono text-emerald-400 font-medium">0</div>
+          <div id="card-2xx-sub" class="text-xs font-mono text-neutral-500 mt-3 pt-3 border-t border-neutral-900">0% of total traffic</div>
+        </div>
+
+        <div class="p-6 bg-neutral-950 border border-neutral-800">
+          <div class="flex items-center justify-between text-xs font-mono text-neutral-400 mb-3">
+            <span>4XX CLIENT ERRORS</span>
+            <span class="text-amber-400 font-bold">CLIENT</span>
+          </div>
+          <div id="card-4xx" class="text-3xl font-mono text-amber-400 font-medium">0</div>
+          <div class="text-xs font-mono text-neutral-500 mt-3 pt-3 border-t border-neutral-900">404 Not Found, 401 Unauthorized</div>
+        </div>
+
+        <div class="p-6 bg-neutral-950 border border-neutral-800">
+          <div class="flex items-center justify-between text-xs font-mono text-neutral-400 mb-3">
+            <span>5XX SERVER ERRORS</span>
+            <span class="text-rose-400 font-bold">CRITICAL</span>
+          </div>
+          <div id="card-5xx" class="text-3xl font-mono text-rose-400 font-medium">0</div>
+          <div class="text-xs font-mono text-neutral-500 mt-3 pt-3 border-t border-neutral-900">500 Internal, 502 Bad Gateway</div>
+        </div>
+
+        <div class="p-6 bg-neutral-950 border border-neutral-800">
+          <div class="flex items-center justify-between text-xs font-mono text-neutral-400 mb-3">
+            <span>COMBINED ERROR RATE</span>
+            <span class="text-neutral-500">(4xx + 5xx)</span>
+          </div>
+          <div id="card-error-rate" class="text-3xl font-mono text-white font-medium">0.00%</div>
+          <div class="text-xs font-mono text-neutral-500 mt-3 pt-3 border-t border-neutral-900">
+            Formula: <code class="text-neutral-400">(4xx + 5xx) / total * 100</code>
+          </div>
+        </div>
+
+        <div class="p-6 bg-neutral-950 border border-neutral-800">
+          <div class="flex items-center justify-between text-xs font-mono text-neutral-400 mb-3">
+            <span>P95 RESPONSE TIME</span>
+            <span class="text-neutral-500">$request_time</span>
+          </div>
+          <div id="card-p95" class="text-3xl font-mono text-white font-medium">0ms</div>
+          <div class="text-xs font-mono text-neutral-500 mt-3 pt-3 border-t border-neutral-900">
+            Target threshold: &lt; 500ms
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Top Failing Endpoints Section -->
+  <section class="bg-neutral-950 py-16 px-6 md:px-12 border-t border-neutral-900">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-8">
+        <span class="text-[11px] font-mono uppercase tracking-wider text-neutral-400">Root Cause Identification</span>
+        <h2 class="text-2xl font-medium text-white tracking-tight mt-1">Top Failing Endpoints</h2>
+        <p class="text-sm text-neutral-400 mt-1">Real failure signatures extracted by <code class="text-neutral-300">analyze.py</code></p>
+      </div>
+
+      <div class="border border-neutral-800 bg-black overflow-x-auto">
+        <table class="w-full text-left text-xs font-mono">
+          <thead class="bg-neutral-900 text-neutral-400 border-b border-neutral-800 uppercase text-[11px]">
+            <tr>
+              <th class="py-3 px-4">Method & URL</th>
+              <th class="py-3 px-4">Status</th>
+              <th class="py-3 px-4">Failure Count</th>
+              <th class="py-3 px-4">Production Impact</th>
+            </tr>
+          </thead>
+          <tbody id="failing-endpoints-body" class="divide-y divide-neutral-900">
+            <tr>
+              <td colspan="4" class="py-6 px-4 text-center text-neutral-500">Loading endpoint failure signatures...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent System Activity Section -->
+  <section class="bg-black py-16 px-6 md:px-12 border-t border-neutral-900">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-8">
+        <span class="text-[11px] font-mono uppercase tracking-wider text-neutral-400">Audit Trail & Ingestion Log</span>
+        <h2 class="text-2xl font-medium text-white tracking-tight mt-1">Recent System Activity</h2>
+        <p class="text-sm text-neutral-400 mt-1">Active log monitoring events from Nginx access log ingestion</p>
+      </div>
+
+      <div id="activity-container" class="space-y-3 font-mono text-xs">
+        <div class="p-4 bg-neutral-950 border border-neutral-800 text-neutral-400">
+          Nginx access logs are being ingested continuously at <code class="text-neutral-200">/var/log/nginx/access.log</code>.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Incident Monitoring Section -->
+  <section id="incident-monitoring" class="bg-neutral-950 py-16 px-6 md:px-12 border-t border-neutral-900">
+    <div class="max-w-6xl mx-auto">
+      <div class="mb-8">
+        <span class="text-[11px] font-mono uppercase tracking-wider text-neutral-400">SRE Component Architecture</span>
+        <h2 class="text-2xl font-medium text-white tracking-tight mt-1">Incident Monitoring Flow</h2>
+        <p class="text-sm text-neutral-400 mt-1">Telemetry pipeline mapping each system component</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 font-mono text-xs">
+        <div class="p-5 bg-black border border-neutral-800">
+          <div class="text-neutral-400 font-bold mb-2 flex items-center justify-between">
+            <span>1. NGINX REVERSE PROXY</span>
+            <span class="text-emerald-400">PORT 80</span>
+          </div>
+          <p class="text-neutral-400 leading-relaxed">
+            Serves static files directly from disk and reverse-proxies API calls to <code class="text-white">127.0.0.1:8000</code>. Logs client IP, method, status code, and <code class="text-white">$request_time</code>.
+          </p>
+        </div>
+
+        <div class="p-5 bg-black border border-neutral-800">
+          <div class="text-neutral-400 font-bold mb-2 flex items-center justify-between">
+            <span>2. FASTAPI / SAMPLE APP</span>
+            <span class="text-cyan-400">PORT 8000</span>
+          </div>
+          <p class="text-neutral-400 leading-relaxed">
+            Asynchronous ASGI backend running behind Uvicorn. Exposes business endpoints plus <code class="text-white">/health</code> and <code class="text-white">/api/stats</code>.
+          </p>
+        </div>
+
+        <div class="p-5 bg-black border border-neutral-800">
+          <div class="text-neutral-400 font-bold mb-2 flex items-center justify-between">
+            <span>3. ANALYZE.SH (BASH)</span>
+            <span class="text-amber-400">CORE PIPELINE</span>
+          </div>
+          <p class="text-neutral-400 leading-relaxed">
+            High-speed CLI parsing using <code class="text-white">grep | awk | sort | uniq -c</code> for immediate command-line triage during production outages.
+          </p>
+        </div>
+
+        <div class="p-5 bg-black border border-neutral-800">
+          <div class="text-neutral-400 font-bold mb-2 flex items-center justify-between">
+            <span>4. ANALYZE.PY (PYTHON)</span>
+            <span class="text-indigo-400">PERCENTILES</span>
+          </div>
+          <p class="text-neutral-400 leading-relaxed">
+            Parses access logs via regex, handles malformed records, and computes p50/p95 latency and slowest routes into JSON format.
+          </p>
+        </div>
+
+        <div class="p-5 bg-black border border-neutral-800">
+          <div class="text-neutral-400 font-bold mb-2 flex items-center justify-between">
+            <span>5. ALERT.PY (WATCHDOG)</span>
+            <span class="text-rose-400">CRON (5 MIN)</span>
+          </div>
+          <p class="text-neutral-400 leading-relaxed">
+            Reads the last 5 minutes of logs. If 5xx error rate exceeds the 5% threshold, it formats an alert payload and triggers AWS SNS.
+          </p>
+        </div>
+
+        <div class="p-5 bg-black border border-neutral-800">
+          <div class="text-neutral-400 font-bold mb-2 flex items-center justify-between">
+            <span>6. AWS SNS & IAM ROLE</span>
+            <span class="text-purple-400">PAGER ALERT</span>
+          </div>
+          <p class="text-neutral-400 leading-relaxed">
+            Dispatches notification emails to SRE on-call engineers. Authenticates via EC2 IAM Role credentials (IMDSv2) with zero static access keys.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Request Lifecycle Deep-Dive -->
+  <section id="architecture-support" class="bg-black py-16 px-6 md:px-12 border-t border-neutral-900">
+    <div class="max-w-6xl mx-auto font-mono text-xs">
+      <div class="mb-6">
+        <span class="text-[11px] uppercase tracking-wider text-neutral-400">Protocol Inspection</span>
+        <h2 class="text-2xl font-medium text-white tracking-tight mt-1 font-sans">
+          Browser Request Lifecycle in Nginx Access Logs
+        </h2>
+      </div>
+
+      <div class="bg-neutral-950 p-6 border border-neutral-800 space-y-4 text-neutral-300">
+        <div class="p-3 bg-black border border-neutral-800">
+          <span class="text-white font-bold block mb-1">1. GET / (Document Load):</span>
+          <code class="text-neutral-400 text-[11px] block overflow-x-auto">
+            198.51.100.24 - - [04/Oct/2026:12:45:01 +0000] "GET / HTTP/1.1" 200 4820 "-" "Mozilla/5.0..." 0.002
+          </code>
+          <span class="text-neutral-500 text-[11px] mt-1 block">Status 200: Served directly from disk via Nginx root directive.</span>
+        </div>
+
+        <div class="p-3 bg-black border border-neutral-800">
+          <span class="text-white font-bold block mb-1">2. Video Stream (GET /hero.mp4):</span>
+          <code class="text-neutral-400 text-[11px] block overflow-x-auto">
+            198.51.100.24 - - [04/Oct/2026:12:45:02 +0000] "GET /hero.mp4 HTTP/1.1" 206 1048576 "-" "Mozilla/5.0..." 0.015
+          </code>
+          <span class="text-neutral-500 text-[11px] mt-1 block">Status 206 Partial Content: HTTP Range headers allow streaming chunks.</span>
+        </div>
+
+        <div class="p-3 bg-black border border-neutral-800">
+          <span class="text-white font-bold block mb-1">3. GET /api/stats (Telemetry Polling):</span>
+          <code class="text-neutral-400 text-[11px] block overflow-x-auto">
+            198.51.100.24 - - [04/Oct/2026:12:45:03 +0000] "GET /api/stats HTTP/1.1" 200 892 "-" "LogPulse-Agent" 0.038
+          </code>
+          <span class="text-neutral-500 text-[11px] mt-1 block">Status 200 (or 502 Bad Gateway if FastAPI is stopped).</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-black border-t border-neutral-900 py-8 px-6 text-center text-xs text-neutral-600 font-mono">
+    LogPulse SRE Dashboard • Ubuntu 22.04 LTS • Nginx Reverse Proxy
+  </footer>
+
+  <script>
+    let isDrillActive = false;
+
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    function toggleDrillMode() {
+      isDrillActive = !isDrillActive;
+      const drillAlert = document.getElementById('drill-alert');
+      const drillBtn = document.getElementById('drill-btn');
+      const badge = document.getElementById('health-badge');
+
+      if (isDrillActive) {
+        drillAlert.classList.remove('hidden');
+        drillBtn.innerText = 'Drill: 502 Bad Gateway Active';
+        drillBtn.className = 'text-[12px] font-mono px-3 py-1.5 border border-red-500 bg-red-950 text-red-300 cursor-pointer';
+        badge.innerText = 'CRITICAL';
+        badge.className = 'px-4 py-1.5 text-xs font-mono font-bold tracking-wider border border-red-600 bg-red-950 text-red-400';
+        document.getElementById('stat-5xx').innerText = '100%';
+        document.getElementById('stat-failing-url').innerText = '/api/stats (502 Bad Gateway)';
+      } else {
+        drillAlert.classList.add('hidden');
+        drillBtn.innerText = 'Step 9 Drill: Break /api/stats';
+        drillBtn.className = 'text-[12px] font-mono px-3 py-1.5 border border-neutral-600 bg-black/40 text-neutral-300 hover:border-neutral-400 cursor-pointer';
+        fetchStats();
+      }
+    }
+
+    async function fetchStats() {
+      if (isDrillActive) return;
+      try {
+        const res = await fetch('/api/stats');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        renderStats(data);
+      } catch (e) {
+        // Fallback or offline indicator
+        const badge = document.getElementById('health-badge');
+        badge.innerText = 'WARNING';
+        badge.className = 'px-4 py-1.5 text-xs font-mono font-bold tracking-wider border border-yellow-600 bg-yellow-950 text-yellow-400';
+      }
+    }
+
+    function renderStats(data) {
+      // Health Badge
+      const badge = document.getElementById('health-badge');
+      const health = data.system_health || (data.five_xx_rate_percent >= 5 ? 'CRITICAL' : data.five_xx_rate_percent > 0.5 ? 'WARNING' : 'HEALTHY');
+      badge.innerText = health;
+      if (health === 'CRITICAL') {
+        badge.className = 'px-4 py-1.5 text-xs font-mono font-bold tracking-wider border border-red-600 bg-red-950 text-red-400';
+      } else if (health === 'WARNING') {
+        badge.className = 'px-4 py-1.5 text-xs font-mono font-bold tracking-wider border border-amber-600 bg-amber-950 text-amber-400';
+      } else {
+        badge.className = 'px-4 py-1.5 text-xs font-mono font-bold tracking-wider border border-emerald-600 bg-emerald-950 text-emerald-400';
+      }
+
+      // System Status Cards
+      document.getElementById('stat-5xx').innerText = data.five_xx_rate_percent.toFixed(2) + '%';
+      document.getElementById('stat-p95').innerText = data.p95_ms + 'ms';
+      document.getElementById('stat-p50').innerText = 'P50: ' + data.p50_ms + 'ms';
+      document.getElementById('stat-total').innerText = data.total_requests.toLocaleString();
+      document.getElementById('stat-failing-url').innerText = data.top_failing_url || 'None detected';
+
+      // Live Log Analytics Cards
+      document.getElementById('card-total').innerText = data.total_requests.toLocaleString();
+      document.getElementById('card-2xx').innerText = data.status_2xx.toLocaleString();
+      document.getElementById('card-2xx-sub').innerText = ((data.status_2xx / data.total_requests) * 100).toFixed(1) + '% of total traffic';
+      document.getElementById('card-4xx').innerText = data.status_4xx.toLocaleString();
+      document.getElementById('card-5xx').innerText = data.status_5xx.toLocaleString();
+      document.getElementById('card-error-rate').innerText = data.error_rate_percent.toFixed(2) + '%';
+      document.getElementById('card-p95').innerText = data.p95_ms + 'ms';
+
+      // Top Failing Endpoints Table
+      const tbody = document.getElementById('failing-endpoints-body');
+      if (data.failing_endpoints && data.failing_endpoints.length > 0) {
+        tbody.innerHTML = data.failing_endpoints.map(item => `
+          <tr class="hover:bg-neutral-900/40">
+            <td class="py-3.5 px-4 text-white font-semibold">
+              <span class="text-neutral-500 mr-2">${item.method || 'GET'}</span>${item.url}
+            </td>
+            <td class="py-3.5 px-4">
+              <span class="px-2 py-0.5 border ${item.status >= 500 ? 'border-red-600 bg-red-950 text-red-400' : 'border-amber-600 bg-amber-950 text-amber-400'}">
+                ${item.status || '5xx'}
+              </span>
+            </td>
+            <td class="py-3.5 px-4 text-neutral-200">${item.count.toLocaleString()} hits</td>
+            <td class="py-3.5 px-4 text-neutral-400">${item.impact || 'Degradation'}</td>
+          </tr>
+        `).join('');
+      }
+
+      // Recent Activity
+      const actContainer = document.getElementById('activity-container');
+      if (data.recent_activity && data.recent_activity.length > 0) {
+        actContainer.innerHTML = data.recent_activity.map(act => `
+          <div class="p-4 bg-neutral-950 border border-neutral-800 flex items-start gap-4">
+            <span class="px-2 py-0.5 text-[10px] font-bold border shrink-0 ${act.level === 'WARN' ? 'border-amber-500 bg-amber-950 text-amber-300' : 'border-emerald-600 bg-emerald-950 text-emerald-300'}">
+              ${act.level}
+            </span>
+            <div class="flex-1">
+              <p class="text-neutral-200">${act.message}</p>
+              <span class="text-[11px] text-neutral-500">${new Date(act.timestamp).toLocaleTimeString()}</span>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Immediate fetch on page load, no animation delays
+    fetchStats();
+    setInterval(fetchStats, 10000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "LogPulse - SRE Log Analyzer & Monitoring Dashboard",
+  "description": "Real-time SRE monitoring dashboard and log analyzer frontend served by Nginx on Ubuntu EC2, integrating Bash/Python log parsers, latency tracking, and AWS SNS alerting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
