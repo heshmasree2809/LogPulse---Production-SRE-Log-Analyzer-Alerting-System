@@ -260,8 +260,3 @@ Automate regular log aggregation and alert checks via `crontab -e`:
 
 ---
 
-## 8. Resume Bullets (Action Verb + Task + Measurable Result)
-
-- **Engineered** an automated POSIX Bash and Python SRE log analysis tool on AWS EC2, processing **[X,XXX]** daily Nginx access logs to compute p50/p95 latency and isolate upstream bottlenecks in under **[X] ms**.
-- **Architected** an automated incident alert pipeline using Python and AWS SNS with IAM role authentication, eliminating static credentials and cutting incident detection time from **14 minutes** to under **30 seconds**.
-- **Designed** and deployed a zero-animation SRE monitoring landing dashboard served via Nginx reverse proxy, providing real-time telemetry on 5xx error rates and endpoint failure signatures during production drills.
